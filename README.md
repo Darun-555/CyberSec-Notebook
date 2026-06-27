@@ -501,6 +501,12 @@ CyberSecNode is a prototype and has some limitations:
 * Live search depends on model and API support
 
 ---
+## 📸 Screenshots
+<img width="1535" height="727" alt="Screenshot 2026-06-23 181003" src="https://github.com/user-attachments/assets/87fbd174-294e-4445-b0ac-1d5abfc9cffd" />
+
+<img width="1536" height="728" alt="image" src="https://github.com/user-attachments/assets/8cd58fe3-3451-4d19-b290-6acd06587c3e" />
+
+---
 
 ## 🚧 Future Improvements
 
